@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Station Master Online v1</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        /* ========== RESET & VARIABLES ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-bg-light: #ffffff;
+            --color-bg-dark: #1a1a2e;
+            --color-text-light: #000000;
+            --color-text-dark: #f0f0f0;
+            --color-accent: #FF6B35;
+            --color-secondary: #f5f5f5;
+            --color-border: #e0e0e0;
+            --color-success: #3fb950;
+            --color-danger: #da3633;
+            --color-warning: #d29922;
+            --font-mono: 'Consolas', 'Courier New', monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body.dark-mode {
+            --color-bg-light: #1a1a2e;
+            --color-bg-dark: #0f0f1e;
+            --color-text-light: #f0f0f0;
+            --color-text-dark: #000000;
+            --color-secondary: #2d2d44;
+            --color-border: #3d3d5c;
+        }
+
+        /* ========== LAYOUT GLOBAL ========== */
+        body {
+            background-color: var(--color-bg-light);
+            color: var(--color-text-light);
+            font-family: var(--font-sans);
+            transition: background-color 0.3s, color 0.3s;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* ========== HEADER ========== */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--color-accent);
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .logo span {
+            color: var(--color-accent);
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .toggle-btn, .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-sans);
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toggle-btn {
+            background-color: var(--color-secondary);
+            color: var(--color-text-light);
+            border: 1px solid var(--color-border);
+        }
+
+        .toggle-btn:hover {
+            background-color: var(--color-border);
+        }
+
+        .btn-primary {
+            background-color: var(--color-accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #e85a2a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+        }
+
+        .btn-secondary {
+            background-color: var(--color-secondary);
+            color: var(--color-text-light);
+            border: 1px solid var(--color-border);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--color-border);
+        }
+
+        .btn-danger {
+            background-color: var(--color-danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82e29;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        /* ========== TABS ========== */
+        .tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--color-border);
+        }
+
+        .tab-btn {
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--color-text-light);
+            opacity: 0.6;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            color: var(--color-text-light);
+            border-bottom-color: var(--color-accent);
+            opacity: 1;
+        }
+
+        .tab-btn:hover {
+            opacity: 0.8;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ========== DASHBOARD ========== */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background-color: var(--color-secondary);
+            border-left: 4px solid var(--color-accent);
+            padding: 20px;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: var(--color-accent);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.7;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .chart-container {
+            background-color: var(--color-secondary);
+            padding: 20px;
+            border-radius: 4px;
+            border: 1px solid var(--color-border);
+        }
+
+        .chart-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ========== LOGBOOK TABLE ========== */
+        .logbook-toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            background-color: var(--color-bg-light);
+            color: var(--color-text-light);
+            font-size: 13px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            background-color: var(--color-secondary);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            font-family: var(--font-mono);
+        }
+
+        thead {
+            background-color: var(--color-bg-light);
+            border-bottom: 2px solid var(--color-accent);
+            position: sticky;
+            top: 0;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--color-accent);
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        tbody tr:hover {
+            background-color: var(--color-bg-light);
+        }
+
+        .cell-edit {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        /* ========== FORM ========== */
+        .form-container {
+            max-width: 600px;
+            background-color: var(--color-secondary);
+            padding: 30px;
+            border-radius: 4px;
+            border-left: 4px solid var(--color-accent);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 10px;
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            background-color: var(--color-bg-light);
+            color: var(--color-text-light);
+            font-family: var(--font-mono);
+            font-size: 13px;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        /* ========== MODAL ========== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--color-bg-light);
+            border-radius: 4px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--color-accent);
+            padding-bottom: 15px;
+        }
+
+        /* ========== TOAST ========== */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--color-success);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            z-index: 2000;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .toast.error {
+            background-color: var(--color-danger);
+        }
+
+        .toast.warning {
+            background-color: var(--color-warning);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+                margin-bottom: 30px;
+            }
+
+            .header-controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .logbook-toolbar {
+                flex-direction: column;
+            }
+
+            .filter-group {
+                width: 100%;
+            }
+
+            .filter-group input,
+            .filter-group select {
+                flex: 1;
+            }
+
+            table {
+                font-size: 11px;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+        }
+
+        /* ========== EMPTY STATE ========== */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--color-text-light);
+            opacity: 0.6;
+        }
+
+        .empty-state p {
+            font-size: 15px;
+            margin-bottom: 20px;
+        }
+
+        /* ========== UTILITY ========== */
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background-color: var(--color-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-accent {
+            background-color: var(--color-accent);
+            color: white;
+            border-color: var(--color-accent);
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== HEADER ========== -->
+    <header>
+        <div class="logo">Station <span>Master</span> Online</div>
+        <div class="header-controls">
+            <button class="toggle-btn" id="toggleDarkMode" title="Basculer mode clair/sombre">
+                🌙 Dark
+            </button>
+            <button class="btn btn-primary" id="newQsoBtn">➕ Nouveau QSO</button>
+        </div>
+    </header>
+
+    <!-- ========== MAIN CONTAINER ========== -->
+    <div class="container">
+        <!-- TABS -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="dashboard">📊 Dashboard</button>
+            <button class="tab-btn" data-tab="logbook">📖 Logbook</button>
+            <button class="tab-btn" data-tab="export">💾 Export</button>
+        </div>
+
+        <!-- ========== TAB: DASHBOARD ========== -->
+        <div id="dashboard" class="tab-content active">
+            <div class="dashboard">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalQsos">0</div>
+                    <div class="stat-label">QSOs Total</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="lastQsoDate">—</div>
+                    <div class="stat-label">Dernier Contact</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="topBand">—</div>
+                    <div class="stat-label">Bande Top</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="topMode">—</div>
+                    <div class="stat-label">Mode Top</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <div class="chart-title">QSOs par Jour (7j)</div>
+                    <canvas id="chartDaily"></canvas>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">Distribution Bandes</div>
+                    <canvas id="chartBands"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== TAB: LOGBOOK ========== -->
+        <div id="logbook" class="tab-content">
+            <div class="logbook-toolbar">
+                <div class="filter-group">
+                    <input type="date" id="filterDate" placeholder="Date">
+                    <select id="filterBand">
+                        <option value="">Toutes les bandes</option>
+                        <option value="160m">160m</option>
+                        <option value="80m">80m</option>
+                        <option value="40m">40m</option>
+                        <option value="20m">20m</option>
+                        <option value="15m">15m</option>
+                        <option value="10m">10m</option>
+                        <option value="6m">6m</option>
+                        <option value="2m">2m</option>
+                        <option value="70cm">70cm</option>
+                    </select>
+                    <input type="text" id="filterCall" placeholder="Appel (ex: ON5AM)">
+                    <button class="btn btn-secondary btn-small" id="clearFilters">Réinitialiser</button>
+                </div>
+                <button class="btn btn-secondary btn-small" id="exportCsvBtn">📥 CSV</button>
+            </div>
+
+            <div class="table-wrapper">
+                <table id="logbookTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Heure</th>
+                            <th>Call</th>
+                            <th>Bande</th>
+                            <th>Mode</th>
+                            <th>RST RX</th>
+                            <th>RST TX</th>
+                            <th>Gridsquare</th>
+                            <th>Notes</th>
+                            <th style="width: 100px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logbookBody">
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="emptyLogbook" class="empty-state" style="display: none;">
+                <p>Aucun QSO enregistré. Commence par en ajouter un!</p>
+                <button class="btn btn-primary" id="newQsoBtn2">➕ Nouveau QSO</button>
+            </div>
+        </div>
+
+        <!-- ========== TAB: EXPORT ========== -->
+        <div id="export" class="tab-content">
+            <div class="form-container">
+                <h2 style="margin-bottom: 20px;">Exporter vos données</h2>
+                
+                <div class="form-group">
+                    <label>Format d'export</label>
+                    <select id="exportFormat">
+                        <option value="adif">ADIF (Importable en logbook)</option>
+                        <option value="csv">CSV (Compatibilité universelle)</option>
+                        <option value="json">JSON (Sauvegarde complète)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Plage de dates (optionnel)</label>
+                    <div class="form-row">
+                        <input type="date" id="exportStartDate" placeholder="Du">
+                        <input type="date" id="exportEndDate" placeholder="Au">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-primary" id="doExportBtn">📥 Télécharger</button>
+                </div>
+
+                <hr style="margin: 30px 0; border: none; border-top: 1px solid var(--color-border);">
+
+                <h3 style="margin-bottom: 15px;">À propos des formats</h3>
+                <div style="font-size: 12px; opacity: 0.7; line-height: 1.8;">
+                    <p><strong>ADIF:</strong> Format standard radioamateur. Importable dans N1MM+, WSJT-X, etc.</p>
+                    <p><strong>CSV:</strong> Feuille de calcul. Ouvrable dans Excel, LibreOffice.</p>
+                    <p><strong>JSON:</strong> Sauvegarde brute de Station Master. Idéal pour réimporter.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== MODAL QSO ========== -->
+    <div class="modal" id="qsoModal">
+        <div class="modal-content">
+            <div class="modal-header" id="modalTitle">Nouveau QSO</div>
+            
+            <form id="qsoForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="formDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Heure (UTC)</label>
+                        <input type="time" id="formTime" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Callsign</label>
+                    <input type="text" id="formCall" placeholder="Ex: ON5AM" required style="text-transform: uppercase;">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Bande</label>
+                        <select id="formBand" required>
+                            <option value="">Sélectionner</option>
+                            <option value="160m">160m</option>
+                            <option value="80m">80m</option>
+                            <option value="40m">40m</option>
+                            <option value="20m">20m</option>
+                            <option value="15m">15m</option>
+                            <option value="10m">10m</option>
+                            <option value="6m">6m</option>
+                            <option value="2m">2m</option>
+                            <option value="70cm">70cm</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Mode</label>
+                        <select id="formMode" required>
+                            <option value="">Sélectionner</option>
+                            <option value="CW">CW</option>
+                            <option value="SSB">SSB</option>
+                            <option value="FM">FM</option>
+                            <option value="RTTY">RTTY</option>
+                            <option value="FT8">FT8</option>
+                            <option value="FT4">FT4</option>
+                            <option value="PSK31">PSK31</option>
+                            <option value="DIGI">DIGI</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>RST RX (reçu)</label>
+                        <input type="text" id="formRstRx" placeholder="Ex: 599" maxlength="3">
+                    </div>
+                    <div class="form-group">
+                        <label>RST TX (envoyé)</label>
+                        <input type="text" id="formRstTx" placeholder="Ex: 579" maxlength="3">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Gridsquare</label>
+                    <input type="text" id="formGrid" placeholder="Ex: JO20SP" style="text-transform: uppercase;">
+                </div>
+
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="formNotes" placeholder="Observations, conditions, etc..."></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
+                    <button type="button" class="btn btn-secondary" id="closeModalBtn">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ========== APP STATE ========== 
+        const APP = {
+            qsos: [],
+            editingId: null,
+            darkMode: localStorage.getItem('darkMode') === 'true',
+            filters: {
+                date: '',
+                band: '',
+                call: ''
+            }
+        };
+
+        // ========== INIT ========== 
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            initDarkMode();
+            attachEventListeners();
+            renderLogbook();
+            updateDashboard();
+        });
+
+        // ========== DARK MODE ========== 
+        function initDarkMode() {
+            if (APP.darkMode) {
+                document.body.classList.add('dark-mode');
+                document.getElementById('toggleDarkMode').textContent = '☀️ Light';
+            }
+        }
+
+        document.getElementById('toggleDarkMode').addEventListener('click', () => {
+            APP.darkMode = !APP.darkMode;
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', APP.darkMode);
+            document.getElementById('toggleDarkMode').textContent = APP.darkMode ? '☀️ Light' : '🌙 Dark';
+        });
+
+        // ========== TABS ========== 
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Désactiver tous les onglets
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+                // Activer le nouvel onglet
+                btn.classList.add('active');
+                const tabId = btn.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // ========== MODAL ========== 
+        const modal = document.getElementById('qsoModal');
+
+        function openModal(qsoId = null) {
+            APP.editingId = qsoId;
+            const form = document.getElementById('qsoForm');
+            const title = document.getElementById('modalTitle');
+
+            if (qsoId) {
+                const qso = APP.qsos.find(q => q.id === qsoId);
+                title.textContent = `Éditer QSO - ${qso.call}`;
+                document.getElementById('formDate').value = qso.date;
+                document.getElementById('formTime').value = qso.time;
+                document.getElementById('formCall').value = qso.call;
+                document.getElementById('formBand').value = qso.band;
+                document.getElementById('formMode').value = qso.mode;
+                document.getElementById('formRstRx').value = qso.rstRx;
+                document.getElementById('formRstTx').value = qso.rstTx;
+                document.getElementById('formGrid').value = qso.grid;
+                document.getElementById('formNotes').value = qso.notes;
+            } else {
+                title.textContent = 'Nouveau QSO';
+                form.reset();
+                document.getElementById('formDate').value = new Date().toISOString().split('T')[0];
+                document.getElementById('formTime').value = new Date().toTimeString().slice(0, 5);
+            }
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+            APP.editingId = null;
+        }
+
+        document.getElementById('newQsoBtn').addEventListener('click', openModal);
+        document.getElementById('newQsoBtn2').addEventListener('click', openModal);
+        document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+        document.getElementById('qsoModal').addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        // ========== FORM SUBMISSION ========== 
+        document.getElementById('qsoForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const qso = {
+                id: APP.editingId || Date.now(),
+                date: document.getElementById('formDate').value,
+                time: document.getElementById('formTime').value,
+                call: document.getElementById('formCall').value.toUpperCase(),
+                band: document.getElementById('formBand').value,
+                mode: document.getElementById('formMode').value,
+                rstRx: document.getElementById('formRstRx').value,
+                rstTx: document.getElementById('formRstTx').value,
+                grid: document.getElementById('formGrid').value.toUpperCase(),
+                notes: document.getElementById('formNotes').value
+            };
+
+            if (APP.editingId) {
+                const idx = APP.qsos.findIndex(q => q.id === APP.editingId);
+                if (idx >= 0) APP.qsos[idx] = qso;
+                showToast('✅ QSO modifié');
+            } else {
+                APP.qsos.push(qso);
+                showToast('✅ QSO ajouté');
+            }
+
+            saveData();
+            renderLogbook();
+            updateDashboard();
+            closeModal();
+        });
+
+        // ========== LOGBOOK RENDERING ========== 
+        function renderLogbook() {
+            const tbody = document.getElementById('logbookBody');
+            const emptyState = document.getElementById('emptyLogbook');
+            tbody.innerHTML = '';
+
+            // Appliquer les filtres
+            let filtered = APP.qsos.filter(qso => {
+                if (APP.filters.date && qso.date !== APP.filters.date) return false;
+                if (APP.filters.band && qso.band !== APP.filters.band) return false;
+                if (APP.filters.call && !qso.call.includes(APP.filters.call.toUpperCase())) return false;
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                emptyState.style.display = 'block';
+                return;
+            }
+            emptyState.style.display = 'none';
+
+            // Trier par date/heure décroissant
+            filtered.sort((a, b) => {
+                const aTime = new Date(a.date + 'T' + a.time);
+                const bTime = new Date(b.date + 'T' + b.time);
+                return bTime - aTime;
+            });
+
+            filtered.forEach(qso => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${qso.date}</td>
+                    <td>${qso.time}</td>
+                    <td><strong>${qso.call}</strong></td>
+                    <td>${qso.band}</td>
+                    <td><span class="badge badge-accent">${qso.mode}</span></td>
+                    <td>${qso.rstRx || '—'}</td>
+                    <td>${qso.rstTx || '—'}</td>
+                    <td><code>${qso.grid || '—'}</code></td>
+                    <td><small>${qso.notes ? qso.notes.substring(0, 30) + (qso.notes.length > 30 ? '...' : '') : '—'}</small></td>
+                    <td class="cell-edit">
+                        <button class="btn btn-secondary btn-small" onclick="openModal(${qso.id})">✏️</button>
+                        <button class="btn btn-danger btn-small" onclick="deleteQso(${qso.id})">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function deleteQso(id) {
+            if (confirm('Confirmer la suppression?')) {
+                APP.qsos = APP.qsos.filter(q => q.id !== id);
+                saveData();
+                renderLogbook();
+                updateDashboard();
+                showToast('✅ QSO supprimé');
+            }
+        }
+
+        // ========== FILTERS ========== 
+        document.getElementById('filterDate').addEventListener('change', (e) => {
+            APP.filters.date = e.target.value;
+            renderLogbook();
+        });
+
+        document.getElementById('filterBand').addEventListener('change', (e) => {
+            APP.filters.band = e.target.value;
+            renderLogbook();
+        });
+
+        document.getElementById('filterCall').addEventListener('change', (e) => {
+            APP.filters.call = e.target.value;
+            renderLogbook();
+        });
+
+        document.getElementById('clearFilters').addEventListener('click', () => {
+            APP.filters = { date: '', band: '', call: '' };
+            document.getElementById('filterDate').value = '';
+            document.getElementById('filterBand').value = '';
+            document.getElementById('filterCall').value = '';
+            renderLogbook();
+        });
+
+        // ========== DASHBOARD ========== 
+        function updateDashboard() {
+            if (APP.qsos.length === 0) {
+                document.getElementById('totalQsos').textContent = '0';
+                document.getElementById('lastQsoDate').textContent = '—';
+                document.getElementById('topBand').textContent = '—';
+                document.getElementById('topMode').textContent = '—';
+                return;
+            }
+
+            // Total QSOs
+            document.getElementById('totalQsos').textContent = APP.qsos.length;
+
+            // Dernier QSO
+            const sorted = [...APP.qsos].sort((a, b) => {
+                const aTime = new Date(a.date + 'T' + a.time);
+                const bTime = new Date(b.date + 'T' + b.time);
+                return bTime - aTime;
+            });
+            const lastDate = new Date(sorted[0].date);
+            document.getElementById('lastQsoDate').textContent = lastDate.toLocaleDateString('fr-FR', {month: 'short', day: 'numeric'});
+
+            // Bande top
+            const bands = {};
+            APP.qsos.forEach(qso => {
+                bands[qso.band] = (bands[qso.band] || 0) + 1;
+            });
+            const topBand = Object.entries(bands).sort((a, b) => b[1] - a[1])[0];
+            document.getElementById('topBand').textContent = topBand ? topBand[0] : '—';
+
+            // Mode top
+            const modes = {};
+            APP.qsos.forEach(qso => {
+                modes[qso.mode] = (modes[qso.mode] || 0) + 1;
+            });
+            const topMode = Object.entries(modes).sort((a, b) => b[1] - a[1])[0];
+            document.getElementById('topMode').textContent = topMode ? topMode[0] : '—';
+
+            // Graphiques
+            drawCharts();
+        }
+
+        function drawCharts() {
+            // QSOs par jour (7 derniers jours)
+            const days = {};
+            const now = new Date();
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date(now);
+                d.setDate(d.getDate() - i);
+                const key = d.toISOString().split('T')[0];
+                days[key] = 0;
+            }
+
+            APP.qsos.forEach(qso => {
+                if (days.hasOwnProperty(qso.date)) {
+                    days[qso.date]++;
+                }
+            });
+
+            const dailyCtx = document.getElementById('chartDaily').getContext('2d');
+            new Chart(dailyCtx, {
+                type: 'line',
+                data: {
+                    labels: Object.keys(days).map(d => new Date(d).toLocaleDateString('fr-FR', {month: 'short', day: 'numeric'})),
+                    datasets: [{
+                        label: 'QSOs',
+                        data: Object.values(days),
+                        borderColor: '#FF6B35',
+                        backgroundColor: 'rgba(255, 107, 53, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+
+            // Distribution bandes
+            const bands = {};
+            APP.qsos.forEach(qso => {
+                bands[qso.band] = (bands[qso.band] || 0) + 1;
+            });
+
+            const bandsCtx = document.getElementById('chartBands').getContext('2d');
+            new Chart(bandsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(bands),
+                    datasets: [{
+                        data: Object.values(bands),
+                        backgroundColor: ['#FF6B35', '#3fb950', '#58a6ff', '#d29922', '#da3633', '#f0883e', '#79c0ff', '#8b949e', '#30363d']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'right' }
+                    }
+                }
+            });
+        }
+
+        // ========== EXPORT ========== 
+        document.getElementById('exportCsvBtn').addEventListener('click', () => {
+            exportAsCSV(APP.qsos);
+            showToast('✅ CSV téléchargé');
+        });
+
+        document.getElementById('doExportBtn').addEventListener('click', () => {
+            const format = document.getElementById('exportFormat').value;
+            const startDate = document.getElementById('exportStartDate').value;
+            const endDate = document.getElementById('exportEndDate').value;
+
+            let qsos = APP.qsos;
+            if (startDate) qsos = qsos.filter(q => q.date >= startDate);
+            if (endDate) qsos = qsos.filter(q => q.date <= endDate);
+
+            if (format === 'adif') {
+                exportAsADIF(qsos);
+            } else if (format === 'csv') {
+                exportAsCSV(qsos);
+            } else if (format === 'json') {
+                exportAsJSON(qsos);
+            }
+            showToast('✅ Export téléchargé');
+        });
+
+        function exportAsADIF(qsos) {
+            let adif = `ADIF Export from Station Master Online\n`;
+            adif += `Generated: ${new Date().toISOString()}\n`;
+            adif += `<ADIF_VER:5>3.1.0>\n`;
+            adif += `<PROGRAMID:22>Station Master Online\n`;
+            adif += `<EOH>\n`;
+
+            qsos.forEach(qso => {
+                adif += `<QSO_DATE:8>${qso.date.replace(/-/g, '')}\n`;
+                adif += `<TIME_ON:4>${qso.time.replace(':', '')}\n`;
+                adif += `<CALL:${qso.call.length}>${qso.call}\n`;
+                adif += `<BAND:3>${qso.band}\n`;
+                adif += `<MODE:${qso.mode.length}>${qso.mode}\n`;
+                if (qso.rstRx) adif += `<RST_RCVD:${qso.rstRx.length}>${qso.rstRx}\n`;
+                if (qso.rstTx) adif += `<RST_SENT:${qso.rstTx.length}>${qso.rstTx}\n`;
+                if (qso.grid) adif += `<GRIDSQUARE:${qso.grid.length}>${qso.grid}\n`;
+                if (qso.notes) adif += `<NOTES:${qso.notes.length}>${qso.notes}\n`;
+                adif += `<EOR>\n`;
+            });
+
+            downloadFile(adif, `station-master-${new Date().toISOString().split('T')[0]}.adi`, 'text/plain');
+        }
+
+        function exportAsCSV(qsos) {
+            let csv = 'Date,Heure,Call,Bande,Mode,RST RX,RST TX,Gridsquare,Notes\n';
+            qsos.forEach(qso => {
+                csv += `"${qso.date}","${qso.time}","${qso.call}","${qso.band}","${qso.mode}","${qso.rstRx}","${qso.rstTx}","${qso.grid}","${qso.notes}"\n`;
+            });
+            downloadFile(csv, `station-master-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
+        }
+
+        function exportAsJSON(qsos) {
+            const json = JSON.stringify({ qsos, exported: new Date().toISOString() }, null, 2);
+            downloadFile(json, `station-master-${new Date().toISOString().split('T')[0]}.json`, 'application/json');
+        }
+
+        function downloadFile(content, filename, type) {
+            const blob = new Blob([content], { type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // ========== STORAGE ========== 
+        function saveData() {
+            localStorage.setItem('stationMaster_qsos', JSON.stringify(APP.qsos));
+        }
+
+        function loadData() {
+            const stored = localStorage.getItem('stationMaster_qsos');
+            if (stored) {
+                APP.qsos = JSON.parse(stored);
+            }
+        }
+
+        // ========== TOAST ========== 
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type === 'error' ? 'error' : type === 'warning' ? 'warning' : ''}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // ========== ATTACH LISTENERS ========== 
+        function attachEventListeners() {
+            // Déjà attachés ci-dessus
+        }
+    </script>
+</body>
+</html>
